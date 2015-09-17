@@ -7,7 +7,9 @@
 
 @2
 D=A
+(HOLI)
 @3
 D=D+A
 @0
+(BOLI)
 M=D

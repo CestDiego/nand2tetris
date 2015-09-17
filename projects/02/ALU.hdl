@@ -7,7 +7,7 @@
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -27,8 +27,8 @@
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,11 +36,44 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+
+    // NotX
+    Not16 (in[0..15]=true, out=Zero);
+
+    /*  X Operations */
+    // ZeroingX
+    Mux16 (a=x, b=Zero, sel=zx, out=MiddleX);
+    // Negating MiddleX
+    Not16 (in=MiddleX, out=NotMiddleX);
+    Mux16 (a=MiddleX, b=NotMiddleX, sel=nx, out=FinalX);
+
+    /*  Y Operations */
+    // ZeroingY
+    Mux16 (a=y, b=Zero, sel=zy, out=MiddleY);
+    // Negating MiddleY
+    Not16 (in=MiddleY, out=NotMiddleY);
+    Mux16 (a=MiddleY, b=NotMiddleY, sel=ny, out=FinalY);
+
+    /* Operations on FinalX and FinalY */
+    Add16 (a=FinalX, b=FinalY, out=XPlusY);
+    And16 (a=FinalX, b=FinalY, out=XAndY);
+    Mux16 (a=XAndY, b=XPlusY, sel=f, out=Result);
+    /* Negation of result? */
+    Not16 (in=Result, out=NotResult);
+    Mux16 (a=Result, b=NotResult, sel=no, out[0..7]=part1, out[8..14]=part2, out[15]=SignificantBit);
+    // Am I being too negative?...Positive! :)
+    Or (a=SignificantBit, b=false, out=ng);
+    // Putting it all together
+    And16 (a[0..7]=part1, a[8..14]=part2, a[15]=SignificantBit, b[0..15]=true, out=out);
+    // Am I Zero? Am I null? Is that what I mean to you?? EHHH?
+    Or8Way (in=part1, out=zr1);
+    Or8Way (in[0..6]=part2, out=zr2);
+    Or (a=zr1, b=zr2, out=zr3);
+    Not (in=zr3, out=zr);
 }

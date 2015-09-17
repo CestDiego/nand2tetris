@@ -4,17 +4,32 @@
 // File name: projects/03/a/PC.hdl
 
 /**
- * A 16-bit counter with load and reset control bits.
- * if      (reset[t] == 1) out[t+1] = 0
- * else if (load[t] == 1)  out[t+1] = in[t]
- * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
- * else                    out[t+1] = out[t]
- */
+* A 16-bit counter with load and reset control bits.
+* if      (reset[t] == 1) out[t+1] = 0
+* else if (load[t] == 1)  out[t+1] = in[t]
+* else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
+* else                    out[t+1] = out[t]
+*/
 
 CHIP PC {
-    IN in[16],load,inc,reset;
-    OUT out[16];
+  IN in[16],load,inc,reset;
+  OUT out[16];
 
-    PARTS:
-    // Put your code here:
+  PARTS:
+  // Check if it's incremented
+  Inc16(in=temp, out=inPlus1);
+  // if inc[t] == 1 >> send in+1 to the next phase
+  Mux16(a=in, b=inPlus1, sel=inc, out=IncrementedIN);
+
+  // Shall I load the in? if not just let the incremented stuff pass
+  Mux16(a=IncrementedIN, b=in, sel=load, out=LoadedIN);
+
+  // Shall I let the loaded thing stay? or reset it?
+  Mux16(a=LoadedIN, b[0..15]=false, sel=reset, out=ResetIN);
+
+  Or8Way(in[0]=load, in[1]=reset, in[2]=inc, out=loading);
+
+  Register(in=ResetIN, load=loading, out=temp);
+  And16(a=temp, b[0..15]=true, out=out);
+
 }

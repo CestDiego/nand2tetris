@@ -4,16 +4,25 @@
 // File name: projects/03/b/RAM16K.hdl
 
 /**
- * Memory of 16K registers, each 16 bit-wide. Out holds the value
- * stored at the memory location specified by address. If load==1, then 
- * the in value is loaded into the memory location specified by address 
- * (the loaded value will be emitted to out from the next time step onward).
- */
+* Memory of 16K registers, each 16 bit-wide. Out holds the value
+* stored at the memory location specified by address. If load==1, then 
+* the in value is loaded into the memory location specified by address 
+* (the loaded value will be emitted to out from the next time step onward).
+*/
 
 CHIP RAM16K {
-    IN in[16], load, address[14];
-    OUT out[16];
+  IN in[16], load, address[14];
+  OUT out[16];
 
-    PARTS:
-    // Put your code here:
+  PARTS:
+  DMux4Way(in=load, sel=address[12..13], a=a-LOAD, b=b-LOAD, c=c-LOAD, d=d-LOAD);
+
+  // The start of the 8 RAM64 each having their own load
+  RAM4K(in=in, load=a-LOAD, address=address[0..11], out=a-OUT);
+  RAM4K(in=in, load=b-LOAD, address=address[0..11], out=b-OUT);
+  RAM4K(in=in, load=c-LOAD, address=address[0..11], out=c-OUT);
+  RAM4K(in=in, load=d-LOAD, address=address[0..11], out=d-OUT);
+
+  // Now to Mux it away! :D
+  Mux4Way16(a=a-OUT, b=b-OUT, c=c-OUT, d=d-OUT, sel=address[12..13], out=out);
 }

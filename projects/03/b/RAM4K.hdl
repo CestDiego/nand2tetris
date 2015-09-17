@@ -4,16 +4,29 @@
 // File name: projects/03/b/RAM4K.hdl
 
 /**
- * Memory of 4K registers, each 16 bit-wide. Out holds the value
- * stored at the memory location specified by address. If load==1, then 
- * the in value is loaded into the memory location specified by address 
- * (the loaded value will be emitted to out from the next time step onward).
- */
+* Memory of 4K registers, each 16 bit-wide. Out holds the value
+* stored at the memory location specified by address. If load==1, then 
+* the in value is loaded into the memory location specified by address 
+* (the loaded value will be emitted to out from the next time step onward).
+*/
 
 CHIP RAM4K {
-    IN in[16], load, address[12];
-    OUT out[16];
+  IN in[16], load, address[12];
+  OUT out[16];
 
-    PARTS:
-    // Put your code here:
+  PARTS:
+  DMux8Way(in=load, sel=address[9..11], a=a-LOAD, b=b-LOAD, c=c-LOAD, d=d-LOAD, e=e-LOAD,f=f-LOAD, g=g-LOAD, h=h-LOAD);
+
+  // The start of the 8 RAM64 each having their own load
+  RAM512(in=in, load=a-LOAD, address=address[0..8], out=a-OUT);
+  RAM512(in=in, load=b-LOAD, address=address[0..8], out=b-OUT);
+  RAM512(in=in, load=c-LOAD, address=address[0..8], out=c-OUT);
+  RAM512(in=in, load=d-LOAD, address=address[0..8], out=d-OUT);
+  RAM512(in=in, load=e-LOAD, address=address[0..8], out=e-OUT);
+  RAM512(in=in, load=f-LOAD, address=address[0..8], out=f-OUT);
+  RAM512(in=in, load=g-LOAD, address=address[0..8], out=g-OUT);
+  RAM512(in=in, load=h-LOAD, address=address[0..8], out=h-OUT);
+
+  // Now to Mux it away! :D
+  Mux8Way16(a=a-OUT, b=b-OUT, c=c-OUT, d=d-OUT, e=e-OUT, f=f-OUT, g=g-OUT, h=h-OUT, sel=address[9..11], out=out);
 }
